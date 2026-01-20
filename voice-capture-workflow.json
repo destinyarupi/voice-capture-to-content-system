@@ -1,0 +1,426 @@
+{
+  "name": "Voice Journal Capture System",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c20a2418-a7e2-460d-9686-e6c20cea7941",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        -656
+      ],
+      "id": "f996e33f-88c8-471f-b295-0a64fd45362e",
+      "name": "Check Message Type"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot8586967263:AAF-XxqiYlzo-iocO_BK7J6onYxb42iBVgE/{{ $json.result.file_path }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        -752
+      ],
+      "id": "123594f7-610c-4ab4-b2e4-2758ac0eb6f8",
+      "name": "Download Audio File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26b555e9-2e76-4359-9bb5-b5073b09a16a",
+              "name": "Date",
+              "value": "={{ $now.format('dd-MMM-yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "edb73045-36d7-43a0-9fd4-283cbcd05be1",
+              "name": "Journal_Entry",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "6c1b941a-8e91-4776-90b8-19b7aba2f7dd",
+              "name": "Timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "7623be45-1eed-46c1-b08c-187a6f924b26",
+              "name": "Audio_File_ID",
+              "value": "={{ $('Trigger: New Message').item.json.message.voice.file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        -752
+      ],
+      "id": "565370cf-c0dc-4084-b6f2-0593f6749c48",
+      "name": "Format for Google Sheets"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        -656
+      ],
+      "id": "ac77406a-9ea2-4280-b5c4-a987bfe187d0",
+      "name": "Trigger: New Message",
+      "webhookId": "d0475a4e-360f-46b1-969f-7fda0269f38e",
+      "credentials": {
+        "telegramApi": {
+          "id": "sczFPchoDyYWu8dE",
+          "name": "Destiny Journal Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot8586967263:AAF-XxqiYlzo-iocO_BK7J6onYxb42iBVgE/getFile?file_id={{ $json.message.voice.file_id }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        608,
+        -752
+      ],
+      "id": "5f89e7c0-b4f0-49bc-9aa2-03ac8a41a797",
+      "name": "Get Voice File Metadata"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the binary data\nconst inputData = $input.first();\nconst binaryData = inputData.binary.data;\n\n// Create new binary data with correct MIME type and extension\nconst newBinaryData = {\n  ...binaryData,\n  mimeType: 'audio/mpeg',  // Change to audio/mpeg\n  fileExtension: 'mp3',     // Change extension to mp3\n  fileName: binaryData.fileName.replace('.oga', '.mp3')  // Update filename\n};\n\nreturn [{\n  json: inputData.json,\n  binary: {\n    data: newBinaryData\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -752
+      ],
+      "id": "fbd32fed-87c8-4faa-b55a-5ba00ea18a0c",
+      "name": "Convert Audio Format"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -752
+      ],
+      "id": "2793de75-9eec-4bf2-879f-fe055450e7e4",
+      "name": "Transcribe Voice to Text",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TCPsNckVcUPKdHfs",
+          "name": "Google Gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0",
+          "mode": "list",
+          "cachedResultName": "Socials Media Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Journal_Entries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Journal_Entry",
+              "displayName": "Journal_Entry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Audio_File_ID",
+              "displayName": "Audio_File_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        -752
+      ],
+      "id": "e98d5287-4fe0-4dfc-a731-34341e840a45",
+      "name": "Save to Journal Database",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Re1TfSM7gxz8YoVu",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Trigger: New Message').item.json.message.from.id }}",
+        "text": "=Journal entry saved ✅",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        -752
+      ],
+      "id": "3cf3943d-7b85-4dbc-a792-5e256bea2301",
+      "name": "Send Confirmation",
+      "webhookId": "ae13b0a6-d3e3-4250-9b8f-5cc4bab7a19e",
+      "credentials": {
+        "telegramApi": {
+          "id": "sczFPchoDyYWu8dE",
+          "name": "Destiny Journal Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Please send a voice note 🎤",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        -560
+      ],
+      "id": "4a988fb3-69f9-4bed-9a50-b152fce52a4e",
+      "name": "Request Voice Note",
+      "webhookId": "e8d43645-4735-4b1b-8bc8-026416219746",
+      "credentials": {
+        "telegramApi": {
+          "id": "sczFPchoDyYWu8dE",
+          "name": "Destiny Journal Bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check Message Type": {
+      "main": [
+        [
+          {
+            "node": "Get Voice File Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Voice Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio File": {
+      "main": [
+        [
+          {
+            "node": "Convert Audio Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Save to Journal Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: New Message": {
+      "main": [
+        [
+          {
+            "node": "Check Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Voice File Metadata": {
+      "main": [
+        [
+          {
+            "node": "Download Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Audio Format": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Voice to Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Voice to Text": {
+      "main": [
+        [
+          {
+            "node": "Format for Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Journal Database": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "qvSa5wMaVwMG7BNO"
+  },
+  "versionId": "e5e4ae2d-b603-4b50-a89b-6fbf2f102586",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8b006a0c2860e2ebe4a18b401240e0a3d67106ad5486c566af12dd05e34cbe2a"
+  },
+  "id": "T3GifHEfw02f3y5a",
+  "tags": []
+}

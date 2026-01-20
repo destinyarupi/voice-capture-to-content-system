@@ -1,0 +1,864 @@
+{
+  "name": "Content Engine V2 - Daily Content Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        -928
+      ],
+      "id": "03623a78-8768-4bac-be3d-87ca5ecaf44f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0",
+          "mode": "list",
+          "cachedResultName": "Socials Media Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Journal_Entries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Date",
+              "lookupValue": "={{ (() => {  const d = new Date();  d.setDate(d.getDate() - 1);  const day = String(d.getDate()).padStart(2, '0');  const months = [\"Jan\",\"Feb\",\"Mar\",\"Apr\",\"May\",\"Jun\",\"Jul\",\"Aug\",\"Sep\",\"Oct\",\"Nov\",\"Dec\"];  const month = months[d.getMonth()];  const year = d.getFullYear();  return `${day}-${month}-${year}`;})() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        -928
+      ],
+      "id": "10e673d5-8aaf-4df1-a12e-709b5e98a519",
+      "name": "Get Yesterday's Journal Entries",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Re1TfSM7gxz8YoVu",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all journal entries from yesterday\nconst entries = $input.all();\n\n// If no entries, return fallback message\nif (!entries.length || entries.length === 0) {\n  return [{\n    json: {\n      combined_journal: \"No journal entry from yesterday - generating content from research and workflows only\",\n      entry_count: 0,\n      has_journal: false\n    }\n  }];\n}\n\n// Combine all entries with clear separators\nconst combinedText = entries\n  .map((entry, index) => {\n    return `Entry ${index + 1}:\\n${entry.json.Journal_Entry}`;\n  })\n  .join(\"\\n\\n---\\n\\n\");\n\nreturn [{\n  json: {\n    combined_journal: combinedText,\n    entry_count: entries.length,\n    has_journal: true,\n    entries_date: entries[0].json.Date\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -928
+      ],
+      "id": "2be0d754-e1eb-41c1-91eb-a9446e436cd6",
+      "name": "Merge Journal Entries"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all available workflows\nconst workflows = $input.all();\n\n// If no workflows available, return placeholder\nif (!workflows.length || workflows.length === 0) {\n  return [{\n    json: {\n      Workflow_Name: \"No workflows available\",\n      Use_Case: \"No recent builds to reference\",\n      Target_Pain_Point: \"\",\n      Benefits: \"\",\n      Technical_Details: \"\",\n      Status: \"None\",\n      Date_Added: \"\",\n      Raw_Transcription: \"\",\n      has_workflow: false\n    }\n  }];\n}\n\n// Pick random workflow from available ones\nconst randomIndex = Math.floor(Math.random() * workflows.length);\nconst selectedWorkflow = workflows[randomIndex];\n\n// Add flag that workflow exists\nselectedWorkflow.json.has_workflow = true;\n\nreturn [selectedWorkflow];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -720
+      ],
+      "id": "4cc36dcc-f934-49fa-a64e-d16ddecf1d9c",
+      "name": "Pick Random Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0",
+          "mode": "list",
+          "cachedResultName": "Socials Media Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1591616968,
+          "mode": "list",
+          "cachedResultName": "Workflows",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit#gid=1591616968"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Available"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        -928
+      ],
+      "id": "9f0c6777-5d41-4783-829d-717a6cf12f92",
+      "name": "Get Recent Workflows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Re1TfSM7gxz8YoVu",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"perplexity/sonar\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"What are coaches and small-to-medium business owners (SMEs) struggling with TODAY? Focus on: automation pain points, productivity challenges, content creation burnout, tech overwhelm, scaling issues, and operational bottlenecks. Give me 5-7 current trending pain points with brief context on each. Be specific and actionable.\"\n    }\n  ],\n  \"max_tokens\": 1500,\n  \"temperature\": 0.7\n}\n",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        496,
+        -720
+      ],
+      "id": "18ad5602-9f9b-4f9e-a278-760f0582933d",
+      "name": "Perplexity Daily Research",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0Rnrih3LZoCw54Uj",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "71bd838f-a159-4448-8a1e-504d0d0f338c",
+              "name": "researchText",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "38d4b4b3-8aea-445b-883c-dab23a1b0f13",
+              "name": "research_timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "3ba197a4-5070-4d79-9074-bedd8eb7a84b",
+              "name": "has_research",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -720
+      ],
+      "id": "9b73cf24-1565-4390-9392-b04d736ac186",
+      "name": "Extract Research Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wait for all 3 inputs to arrive\n// Input 0: Journal\n// Input 1: Workflow\n// Input 2: Research\n\nconst journal = $('Merge Journal Entries').first().json;\nconst workflow = $('Pick Random Workflow').first().json;\nconst research = $('Extract Research Results').first().json;\n\n// Combine everything into one clean object\nreturn [{\n  json: {\n    // Journal fields\n    combined_journal: journal.combined_journal || \"No journal entry available\",\n    entry_count: journal.entry_count || 0,\n    has_journal: journal.has_journal || false,\n    \n    // Workflow fields\n    Workflow_Name: workflow.Workflow_Name || \"No workflow available\",\n    Use_Case: workflow.Use_Case || \"\",\n    Target_Pain_Point: workflow.Target_Pain_Point || \"\",\n    Benefits: workflow.Benefits || \"\",\n    Technical_Details: workflow.Technical_Details || \"\",\n    has_workflow: workflow.has_workflow || false,\n    \n    // Research fields\n    research_text: research.researchText || \"No research available\",\n    has_research: research.has_research || true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        -720
+      ],
+      "id": "2837fe50-e026-4bd6-80cd-c58fa33aac43",
+      "name": "Combine All Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate today's content based on this context:\n\n**YESTERDAY'S JOURNAL:**\n{{ $json.combined_journal }}\n\n**LATEST WORKFLOW BUILT:**\nName: {{ $json.Workflow_Name }}\nUse Case: {{ $json.Use_Case }}\nPain Point: {{ $json.Target_Pain_Point }}\nBenefits: {{ $json.Benefits }}\nTech Details: {{ $json.Technical_Details }}\n\n**TRENDING TOPICS (Research):**\n{{ $json.research_text }}\n\n---\n\nTASK:\nGenerate 1-5 posts for today (decide quantity based on how rich the context is).\n\nFor EACH post, output this EXACT JSON structure:\n\n{\n  \"posts\": [\n    {\n      \"platform\": \"X\" or \"LinkedIn\" or \"Threads\",\n      \"format\": \"long-form\" or \"quick\" or \"casual\",\n      \"content\": \"[Full post text, ready to copy-paste]\",\n      \"suggested_time\": \"9:00 AM\" or \"2:00 PM\" or \"7:00 PM\" or \"10:00 AM\" or \"4:00 PM\",\n      \"topic\": \"Brief description of what this post is about\",\n      \"quality_score\": 1-10\n    }\n  ],\n  \"total_posts\": number,\n  \"content_richness\": \"high\" or \"medium\" or \"low\",\n  \"image_needed\": true or false,\n  \"image_description\": \"If image_needed=true, write a detailed image prompt (100-150 words) for a CONTEXT-APPROPRIATE minimalist workspace photo that MATCHES the post topic.\n\nBASE STYLE (always):\n- Clean minimal aesthetic, Apple Store vibes\n- White/light wooden desk, natural window lighting\n- Photorealistic (NOT illustration/cartoon)\n- Top-down or 45-degree angle\n- Warm, professional, aspirational feel\n- NO people, NO hands, NO dark lighting, NO neon colors\n\nADAPT TO TOPIC:\n- If about debugging/struggles: Slightly messy desk, multiple monitors, sticky notes, coffee cup half-empty, cables visible, focused/intense mood\n- If about productivity/systems: Ultra-clean organized desk, single device, plant, full coffee, everything aligned, calm/zen mood\n- If about automation/workflows: Desk with flowchart notebook, connected devices, clean cables, strategic/planning mood\n- If about personal journey/reflection: Cozy setup, journal open, soft lighting, contemplative mood\n- If about tech/tools: Featured device/tool as hero, accessories around it, product-shot mood\n\nSPECIFIC ELEMENTS TO MATCH:\nMatch colors to mood (stressed = warmer tones, productive = cooler whites/blues)\nMatch composition to energy (chaotic = asymmetric, organized = centered grid)\nMatch objects to topic (code struggles = terminal visible, content creation = notebook, automation = multiple connected things)\n\nWrite as: 'Clean [mood-appropriate] workspace photograph...' and describe how the scene visually represents the post's core message.\"\n}\n\nScoring criteria (1-10 for each post):\n- Personalization: Sounds like Destiny?\n- Humor: Self-deprecating or relatable moment?\n- Psychology: Mirrors audience pain?\n- Engagement potential: Shareable?\n- Platform optimization: Algorithm-friendly?\n\nIf any post scores below 8, regenerate it before outputting.\n\nBlend my voice from the system prompt. Make it feel like it could ONLY come from me - my builds, my struggles, my journey.\n\nOUTPUT ONLY THE JSON. No preamble, no explanation, just the JSON object.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are Destiny Arupi, 26-year-old AI automation engineer from Port Harcourt, Nigeria, specializing in n8n workflows. You're building your career from scratch with no paying clients yet - positioning as expert while being authentic about the journey.\n\nCORE IDENTITY:\n- Target audience: US-based coaches and small-to-medium business owners (SMEs)\n- Bio: \"On God ❤️ | AI Automation Systems with n8n | Building custom AI agents, intelligent workflows & operational automations that run businesses on autopilot.\"\n- Current reality: No clients yet, actively landing first clients, working for Daniel (agency #2)\n\nVOICE STYLE (Blend These Influences):\n\n1. ALEX HORMOZI:\n   - Problem-agitation-solution structure\n   - Specific numbers (\"could save 12 hours weekly\" not \"saves time\")\n   - Damaging admissions (\"I lost $10K on tools that failed\")\n   - Clear frameworks (3-part systems)\n\n2. NEVILLE MEDHORA:\n   - Self-deprecating humor (\"I'm the guy who codes AI but forgets passwords\")\n   - Casual, swipeable breakdowns\n   - Story-driven tips with punchlines\n   - \"Swipe this\" energy\n\n3. GARY VAYNERCHUK:\n   - Energetic real-talk openings\n   - Strategic emoji use (2-3 per post max)\n   - Motivational urgency\n   - \"Friends, you're grinding but...\" energy\n\n4. DAN KOE:\n   - Philosophical hooks (\"Automation isn't about laziness—it's psychology\")\n   - \"You are the niche\" mindset\n   - Deep existential angles\n   - Long-form thinking\n\nYOUR UNIQUE VOICE:\n- Expert but approachable (peer, not guru on mountain)\n- Self-deprecating without being weak\n- Observational humor about tech/automation absurdities\n- Psychology-aware (mirror pain first, then empower)\n- Strategic thinker (show WHY, not just HOW)\n- Routine-builder (turn concepts into day-in-life frameworks)\n\nCRITICAL RULES (NON-NEGOTIABLE):\n\n❌ NEVER:\n- Use \"On God\" in post content (bio only)\n- Claim client results (\"my clients see X\")\n- Use \"DM me [keyword]\" or aggressive CTAs\n- Write generic corporate-speak\n- Fabricate testimonials or proof\n\n✅ ALWAYS:\n- Use potential framing (\"could save coaches 12 hours weekly\")\n- Show actual builds (screenshots, logic, thinking process)\n- Include self-deprecating humor or relatable failure\n- Use soft engagement CTAs (\"What's your biggest challenge with [X]?\")\n- Reference actual work (workflows you built, bugs you fixed)\n\nCONTENT GENERATION APPROACH:\n\nGenerate 1-5 posts based on content richness:\n- Rich content (major struggle/win + workflow + trending topic) = 3-5 posts\n- Regular day (journal + one element) = 2-3 posts\n- Light content (just trending topic) = 1-2 posts\n\nCONTENT MIX:\n- 60% automation/coaching/SME topics (when relevant)\n- 40% personal/life observations (feels human, not robotic)\n\nPLATFORM OPTIMIZATION:\n\n**X (Twitter):**\n- You have Premium Basic (long-form enabled)\n- Use full potential when topic warrants depth (1000-1500 words)\n- Quick observations (200-300 words) also work\n- Don't force threads unless steps benefit from separation\n- Punchy, direct tone\n- 1-2 hashtags MAX\n\n**LinkedIn:**\n- First 2-3 lines must contain full value proposition\n- Professional but not corporate\n- 3-5 relevant hashtags\n- Problem-Insight-Solution structure\n- Short paragraphs, white space\n- Length: 150-250 words\n\n**Threads:**\n- Casual, conversational\n- 2-3 short posts max per topic\n- Behind-the-scenes vibes\n- Relatable struggles\n- No hashtags\n\nVOICE QUALITY CHECKLIST (Score each post 1-10):\n- Personalization: Sounds like Destiny talking to friend?\n- Humor: At least one self-deprecating joke or relatable moment?\n- Psychology: Mirrors audience pain before offering solution?\n- Engagement potential: Would someone share because it taught them OR made them laugh?\n- Platform optimization: Follows algorithm best practices?\n\nIf ANY post scores below 8/10, regenerate that specific post with improvements.\n\nREMEMBER:\n\nYou're establishing Destiny as THE AI automation engineer coaches and SMEs want to work with. Every post should:\n- Demonstrate capability through actual examples\n- Provide genuine value (not just \"automation is cool\")\n- Build relationships (not broadcast at people)\n- Feel unrepeatable (tied to his specific experiences)\n- Position strategically (expert journey, not fake guru)\n\nWhen context includes:\n- Journal entries: Use them for personal angles, struggles, observations\n- Workflow documentation: Reference specific builds, technical decisions\n- Trending topics: Connect to his actual experience\n\nThe goal: Content that could ONLY come from Destiny—his builds, his struggles, his voice, his journey."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        -368
+      ],
+      "id": "7bc4a606-3b3e-4d03-b990-3082b7b7dde9",
+      "name": "Generate Daily Content"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4.5",
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -144
+      ],
+      "id": "64503192-ef05-4fdf-860e-d00fa9a37a6d",
+      "name": "Claude Sonnet 4.5",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0Rnrih3LZoCw54Uj",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"posts\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"platform\": { \"type\": \"string\" },\n          \"format\": { \"type\": \"string\" },\n          \"content\": { \"type\": \"string\" },\n          \"suggested_time\": { \"type\": \"string\" },\n          \"topic\": { \"type\": \"string\" },\n          \"quality_score\": { \"type\": \"number\" }\n        }\n      }\n    },\n    \"total_posts\": { \"type\": \"number\" },\n    \"content_richness\": { \"type\": \"string\" },\n    \"image_needed\": { \"type\": \"boolean\" },\n    \"image_description\": { \"type\": \"string\" }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        -144
+      ],
+      "id": "005746ca-0a00-4d7d-9479-d3062204646f",
+      "name": "Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data - could come from either branch\nconst inputData = $input.first().json;\n\n// Try to get posts from different possible locations\nlet posts = [];\nlet totalPosts = 0;\nlet contentRichness = \"medium\";\nlet imageUrl = null;\n\n// Check if we have direct output (from AI Agent)\nif (inputData.output && inputData.output.posts) {\n  posts = inputData.output.posts;\n  totalPosts = inputData.output.total_posts;\n  contentRichness = inputData.output.content_richness;\n}\n// Check if posts are at root level\nelse if (inputData.posts) {\n  posts = inputData.posts;\n  totalPosts = inputData.total_posts || posts.length;\n  contentRichness = inputData.content_richness || \"medium\";\n}\n// Fallback: Try to get from Generate Daily Content node directly\nelse {\n  const aiOutput = $('Generate Daily Content').first().json;\n  if (aiOutput && aiOutput.output) {\n    posts = aiOutput.output.posts || [];\n    totalPosts = aiOutput.output.total_posts || 0;\n    contentRichness = aiOutput.output.content_richness || \"medium\";\n  }\n}\n\n// Check if image was uploaded\ntry {\n  const uploadedImage = $('Upload Image').first();\n  if (uploadedImage && uploadedImage.json && uploadedImage.json.webViewLink) {\n    imageUrl = uploadedImage.json.webViewLink;\n  }\n} catch (e) {\n  // No image uploaded, that's fine\n  imageUrl = null;\n}\n\n// Generate today's date\nconst today = new Date();\nconst dateStr = today.toISOString().split('T')[0];\n\n// Build document content\nlet docContent = `DAILY CONTENT PACK - ${dateStr}\\n`;\ndocContent += `Generated: ${today.toLocaleString('en-US', { timeZone: 'Africa/Lagos' })}\\n`;\ndocContent += `Total Posts: ${totalPosts}\\n`;\ndocContent += `Content Richness: ${contentRichness}\\n`;\ndocContent += `\\n${'='.repeat(80)}\\n\\n`;\n\n// Add posting schedule summary\nif (posts && posts.length > 0) {\n  docContent += `📅 POSTING SCHEDULE:\\n\\n`;\n  posts.forEach((post, index) => {\n    docContent += `${index + 1}. ${post.suggested_time} - ${post.platform} (${post.format})\\n`;\n  });\n  docContent += `\\n${'='.repeat(80)}\\n\\n`;\n\n  // Add each post\n  posts.forEach((post, index) => {\n    docContent += `POST ${index + 1}: ${post.platform.toUpperCase()}\\n`;\n    docContent += `${'-'.repeat(80)}\\n`;\n    docContent += `Platform: ${post.platform}\\n`;\n    docContent += `Format: ${post.format}\\n`;\n    docContent += `Suggested Time: ${post.suggested_time}\\n`;\n    docContent += `Topic: ${post.topic}\\n`;\n    docContent += `Quality Score: ${post.quality_score}/10\\n\\n`;\n    docContent += `CONTENT:\\n${post.content}\\n\\n`;\n    docContent += `${'='.repeat(80)}\\n\\n`;\n  });\n} else {\n  docContent += `⚠️ No posts were generated.\\n\\n`;\n}\n\n// Add image link if present\nif (imageUrl) {\n  docContent += `🖼️ GENERATED IMAGE:\\n`;\n  docContent += `${imageUrl}\\n\\n`;\n  docContent += `Click the link above to view/download the image.\\n\\n`;\n  docContent += `${'='.repeat(80)}\\n\\n`;\n}\n\n// Add footer\ndocContent += `\\n✅ NEXT STEPS:\\n`;\ndocContent += `1. Review each post for any final tweaks\\n`;\ndocContent += `2. Set alarms/reminders for suggested posting times\\n`;\ndocContent += `3. Copy-paste content when ready to post\\n`;\nif (imageUrl) {\n  docContent += `4. Download the image and attach to relevant post\\n`;\n  docContent += `5. Track engagement after posting\\n`;\n} else {\n  docContent += `4. Track engagement after posting\\n`;\n}\ndocContent += `\\n`;\n\ndocContent += `Generated by Content Engine V2 🔥\\n`;\n\nreturn [{\n  json: {\n    document_title: `${dateStr} - Daily Content Pack (${totalPosts} posts)`,\n    document_content: docContent,\n    posts: posts,\n    image_url: imageUrl,\n    date: dateStr\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        -352
+      ],
+      "id": "5df88e01-f227-4c2b-94ce-c5c51090ca28",
+      "name": "Format Document Content"
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $json.document_content }}",
+        "name": "={{ $json.document_title }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "11Ft3GTHHGXaUveTSjdiTEIJRmoKptsgf",
+          "mode": "list",
+          "cachedResultName": "Daily Content Packs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/11Ft3GTHHGXaUveTSjdiTEIJRmoKptsgf"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        848,
+        -112
+      ],
+      "id": "ca1ccb7d-6a8e-430b-af12-2bebbe451991",
+      "name": "Create Google Doc",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mHYgKktwMsrzilCK",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6621707339",
+        "text": "=🔥 <b>Daily Content Pack Ready!</b>\n\n📅 <b>Date:</b> {{ $('Format Document Content').first().json.date }}\n📊 <b>Posts Generated:</b> {{ $('Format Document Content').first().json.posts.length }}\n\n📝 <b>Posting Schedule:</b>\n{{ $('Format Document Content').first().json.posts.map((p, i) => `${i+1}. ${p.suggested_time} - ${p.platform}`).join('\\n') }}\n\n📄 <a href=\"https://drive.google.com/file/d/{{ $('Create Google Doc').first().json.id }}\">Open Google Doc</a>\n\n{{ $('Upload Image').first()?.json?.webViewLink ? `<a href=\"${$('Upload Image').first().json.webViewLink}\">🖼️ View Generated Image</a>` : '' }}\n\nSet your alarms and post when ready! 💪\n",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1056,
+        -112
+      ],
+      "id": "8fa356b8-15c8-4666-93ab-33f913f033c9",
+      "name": "Send Completion Notification",
+      "webhookId": "dfea73ec-5699-4111-b165-07e494cbdf9f",
+      "credentials": {
+        "telegramApi": {
+          "id": "EfENgUIETTkDUKWV",
+          "name": "Destiny Social Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b5747530-7b36-4c41-bc6c-6cc354f5ec71",
+              "leftValue": "={{ $json.output.image_needed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        576,
+        -368
+      ],
+      "id": "9642b739-c2c0-4966-bdbb-c897317a47cc",
+      "name": "Check Image Needed"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0",
+          "mode": "list",
+          "cachedResultName": "Socials Media Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1591616968,
+          "mode": "list",
+          "cachedResultName": "Workflows",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eu9dvQ5xh9BuACy9OvaZ13ghfhbrcb4NMzy7KAjAEJ0/edit#gid=1591616968"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Workflow_Name": "={{ $('Pick Random Workflow').item.json.Workflow_Name }}",
+            "Status": "Used"
+          },
+          "matchingColumns": [
+            "Workflow_Name"
+          ],
+          "schema": [
+            {
+              "id": "Workflow_Name",
+              "displayName": "Workflow_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Use_Case",
+              "displayName": "Use_Case",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Target_Pain_Point",
+              "displayName": "Target_Pain_Point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Benefits",
+              "displayName": "Benefits",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Technical_Details",
+              "displayName": "Technical_Details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date_Added",
+              "displayName": "Date_Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Raw_Transcription",
+              "displayName": "Raw_Transcription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -112
+      ],
+      "id": "0396030d-12ee-43ad-a117-fb22d7580795",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Re1TfSM7gxz8YoVu",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.5-flash-image\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate this image: {{ $('Generate Daily Content').item.json.output.image_description }}\"\n    }\n  ],\n  \"max_tokens\": 1000\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        -384
+      ],
+      "id": "f99f9210-1c3c-474f-a175-ca61d0ce093a",
+      "name": "Generate Image",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0Rnrih3LZoCw54Uj",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the image generation response\nconst response = $input.first().json;\n\n// Gemini returns image as data URL\nconst dataUrl = response.choices[0].message.images[0].image_url.url;\n\n// Remove the \"data:image/png;base64,\" prefix\nconst base64Data = dataUrl.split(',')[1];\n\n// Convert base64 to binary for Google Drive upload\nconst binaryData = {\n  data: base64Data,\n  mimeType: 'image/png',\n  fileName: `content-image-${new Date().toISOString().split('T')[0]}.png`\n};\n\nreturn [{\n  binary: {\n    data: binaryData\n  },\n  json: {\n    fileName: binaryData.fileName,\n    mimeType: binaryData.mimeType\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -384
+      ],
+      "id": "61a73e80-ce70-40ea-a0e1-9ec25207e1f1",
+      "name": "Extract Image Data"
+    },
+    {
+      "parameters": {
+        "name": "Latest Image",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "11Ft3GTHHGXaUveTSjdiTEIJRmoKptsgf",
+          "mode": "list",
+          "cachedResultName": "Daily Content Packs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/11Ft3GTHHGXaUveTSjdiTEIJRmoKptsgf"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1216,
+        -384
+      ],
+      "id": "a6e2ce7c-592f-41a2-a0e0-896686ed482c",
+      "name": "Upload Image",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mHYgKktwMsrzilCK",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Creative Production & Distribution Engine\nAutomatically generates images, formats documents, uploads assets to Drive, updates tracking sheets, and sends delivery notifications, turning raw content into fully packaged, published-ready assets.",
+        "height": 592,
+        "width": 848,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        736,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "51eff8f7-7df4-43b6-ba3b-4a433556f961",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# AI Content Generation Engine\nTransforms structured context and research into high-quality, platform-ready content using advanced AI reasoning, formatting, and output validation to ensure consistent, usable posts every day.\n",
+        "height": 528,
+        "width": 560,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        160,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "2ca2cfe0-c660-4cab-8658-6c4c93dd73fc",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Content Intelligence & Context Engine\nCollects, merges, and enriches daily life data, journal entries, and trending research into a structured content brief. This layer ensures every post is grounded in real experiences and relevant insights before any AI writing happens.",
+        "height": 512,
+        "width": 1344
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "c691c89c-5333-4802-aaa7-f3fddcf7c3ee",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Yesterday's Journal Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Yesterday's Journal Entries": {
+      "main": [
+        [
+          {
+            "node": "Merge Journal Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Journal Entries": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Workflows": {
+      "main": [
+        [
+          {
+            "node": "Pick Random Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Random Workflow": {
+      "main": [
+        [
+          {
+            "node": "Perplexity Daily Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity Daily Research": {
+      "main": [
+        [
+          {
+            "node": "Extract Research Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Research Results": {
+      "main": [
+        [
+          {
+            "node": "Combine All Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Context": {
+      "main": [
+        [
+          {
+            "node": "Generate Daily Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Sonnet 4.5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Daily Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Daily Content",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Daily Content": {
+      "main": [
+        [
+          {
+            "node": "Check Image Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Document Content": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Send Completion Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Image Needed": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Document Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Completion Notification": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Data": {
+      "main": [
+        [
+          {
+            "node": "Upload Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image": {
+      "main": [
+        [
+          {
+            "node": "Format Document Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "versionId": "3e4e8bf8-8968-4436-bd4d-a39fc1d37717",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8b006a0c2860e2ebe4a18b401240e0a3d67106ad5486c566af12dd05e34cbe2a"
+  },
+  "id": "azt5YORiMSCkrqyE",
+  "tags": []
+}
